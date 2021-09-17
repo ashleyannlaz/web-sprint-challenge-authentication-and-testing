@@ -1,103 +1,59 @@
-const router = require('express').Router();
+const router = require("express").Router();
 const db = require("../../data/dbConfig");
-const {JWT_SECRET} = require('../secrets/index')
+const { JWT_SECRET } = require("../secrets/index");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const { checkUsername, checkPayload, usernameExists } = require("./auth-middleware");
 
 // BUILD TOKEN FUNCTION
 function buildToken(user) {
-  
   const payload = {
-    id: user.user_id,
     username: user.username,
-    role_name: user.role_name,
   };
-  console.log(payload)
   const options = {
     expiresIn: "1d",
   };
-  const token = jwt.sign(payload, JWT_SECRET, options)
-  return token
+  const token = jwt.sign(payload, JWT_SECRET, options);
+  return token;
 }
- 
+
 // ADD FUNCTION
 async function add(user) {
   const result = await db("users").insert(user);
-  const id = result[0]
+  const id = result[0];
   return findById(id);
 }
-
+// FIND BY ID
 async function findById(id) {
-  const result = await db('users').select('username', 'id', 'password').where('id',id)
-  return result
+  const result = await db("users")
+    .select("username", "id", "password")
+    .where("id", id);
+  return result;
 }
 
-router.post('/register', (req, res) => {
-  
-  const {username, password} = req.body
-  const hash = bcrypt.hashSync(password,8)
-  add({username, password: hash})
-  .then(no => {
-    res.status(201).json(no)
-  })
-  .catch(error => {
-    console.log(error)
-  }) 
-
-  /*
-    IMPLEMENT
-    You are welcome to build additional middlewares to help with the endpoint's functionality.
-    DO NOT EXCEED 2^8 ROUNDS OF HASHING!
-
-    1- In order to register a new account the client must provide `username` and `password`:
-      {
-        "username": "Captain Marvel", // must not exist already in the `users` table
-        "password": "foobar"          // needs to be hashed before it's saved
-      }
-
-    2- On SUCCESSFUL registration,
-      the response body should have `id`, `username` and `password`:
-      {
-        "id": 1,
-        "username": "Captain Marvel",
-        "password": "2a$08$jG.wIGR2S4hxuyWNcBf9MuoC4y0dNy7qC/LbmtuFBSdIhWks2LhpG"
-      }
-
-    3- On FAILED registration due to `username` or `password` missing from the request body,
-      the response body should include a string exactly as follows: "username and password required".
-
-    4- On FAILED registration due to the `username` being taken,
-      the response body should include a string exactly as follows: "username taken".
-  */
+router.post("/register", checkPayload, usernameExists, (req, res, next) => {
+  const { username, password } = req.body;
+  const hash = bcrypt.hashSync(password, 8);
+  add({ username, password: hash })
+    .then((no) => {
+      res.status(201).json(no);
+    })
+    .catch((error) => {
+      next(error);
+    });
 });
 
-router.post('/login', (req, res) => {
-  res.end('implement login, please!');
-  /*
-    IMPLEMENT
-    You are welcome to build additional middlewares to help with the endpoint's functionality.
+router.post("/login", checkPayload, checkUsername, (req, res, next) => {
+    try{
+      const token = buildToken(req.username);
+      res.status(200).json({
+        message: `${req.username.username} is back!`,
+        token,
+      });
+    }catch (error) {
+      next(error)
+    }
 
-    1- In order to log into an existing account the client must provide `username` and `password`:
-      {
-        "username": "Captain Marvel",
-        "password": "foobar"
-      }
-
-    2- On SUCCESSFUL login,
-      the response body should have `message` and `token`:
-      {
-        "message": "welcome, Captain Marvel",
-        "token": "eyJhbGciOiJIUzI ... ETC ... vUPjZYDSa46Nwz8"
-      }
-
-    3- On FAILED login due to `username` or `password` missing from the request body,
-      the response body should include a string exactly as follows: "username and password required".
-
-    4- On FAILED login due to `username` not existing in the db, or `password` being incorrect,
-      the response body should include a string exactly as follows: "invalid credentials".
-  */
 });
 
 module.exports = router;
-
-
