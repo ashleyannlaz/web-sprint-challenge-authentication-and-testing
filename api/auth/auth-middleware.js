@@ -33,10 +33,11 @@ const checkUsername = async (req, res, next) => {
     if (!exists) {
       next({ status: 401, message: "invalid credentials" });
     } else {
-
         if(bcrypt.compareSync(req.body.password, exists.password)){
             req.username = exists
             next()
+        } else {
+            next({ status: 401, message: "invalid credentials" });
         }
     }
   } catch (error) {
