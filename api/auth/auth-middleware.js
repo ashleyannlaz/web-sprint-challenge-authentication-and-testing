@@ -27,11 +27,12 @@ const checkUsername = async (req, res, next) => {
       .select("username", "password")
       .where("username", req.body.username)
       .first();
-    if (exists) {
-      if (bcrypt.compareSync(req.body.password, exists.password)) {
-        req.username = exists;
-        next();
-      }
+
+    if (!exists) {
+      next({ status: 401, message: "invalid credentials" });
+    } else if (bcrypt.compareSync(req.body.password, exists.password)) {
+      req.username = exists;
+      next();
     } else {
       next({ status: 401, message: "invalid credentials" });
     }
@@ -41,3 +42,15 @@ const checkUsername = async (req, res, next) => {
 };
 
 module.exports = { usernameExists, checkUsername, checkPayload };
+
+// if (exists) {
+//     if (bcrypt.compareSync(req.body.password, exists.password)) {
+//       req.username = exists;
+//       next();
+//     } else {
+//       next({ status: 401, message: "invalid credentials" });
+
+//     }
+//   } else {
+//   next({ status: 401, message: "invalid credentials" });
+//   }
