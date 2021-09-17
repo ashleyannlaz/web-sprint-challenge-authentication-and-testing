@@ -1,5 +1,3 @@
-const { JWT_SECRET } = require("../secrets/index"); // use this secret!
-const jwt = require("jsonwebtoken");
 const db = require("../../data/dbConfig");
 const bcrypt = require("bcryptjs");
 

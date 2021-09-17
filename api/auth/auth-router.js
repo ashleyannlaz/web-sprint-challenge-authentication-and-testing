@@ -18,14 +18,14 @@ function buildToken(user) {
   return token;
 }
 
-// ADD FUNCTION
+// ADD MODEL
 async function add(user) {
   const result = await db("users").insert(user);
   const id = result[0];
   return findById(id);
   
 }
-// FIND BY ID
+// FIND BY ID MODEL
 async function findById(id) {
   const result = await db("users")
     .select("username", "id", "password")
@@ -38,7 +38,7 @@ router.post("/register", checkPayload, usernameExists, (req, res, next) => {
   const hash = bcrypt.hashSync(password, 8);
   add({ username, password: hash })
     .then((user) => {
-      res.status(201).json(user);
+      res.status(201).json(user[0]);
     })
     .catch((error) => {
       next(error);
