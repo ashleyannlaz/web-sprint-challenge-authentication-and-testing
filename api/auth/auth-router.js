@@ -1,7 +1,49 @@
 const router = require('express').Router();
+const db = require("../../data/dbConfig");
+const {JWT_SECRET} = require('../secrets/index')
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+
+// BUILD TOKEN FUNCTION
+function buildToken(user) {
+  
+  const payload = {
+    id: user.user_id,
+    username: user.username,
+    role_name: user.role_name,
+  };
+  console.log(payload)
+  const options = {
+    expiresIn: "1d",
+  };
+  const token = jwt.sign(payload, JWT_SECRET, options)
+  return token
+}
+ 
+// ADD FUNCTION
+async function add(user) {
+  const result = await db("users").insert(user);
+  const id = result[0]
+  return findById(id);
+}
+
+async function findById(id) {
+  const result = await db('users').select('username', 'id', 'password').where('id',id)
+  return result
+}
 
 router.post('/register', (req, res) => {
-  res.end('implement register, please!');
+  
+  const {username, password} = req.body
+  const hash = bcrypt.hashSync(password,8)
+  add({username, password: hash})
+  .then(no => {
+    res.status(201).json(no)
+  })
+  .catch(error => {
+    console.log(error)
+  }) 
+
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
@@ -57,3 +99,5 @@ router.post('/login', (req, res) => {
 });
 
 module.exports = router;
+
+
