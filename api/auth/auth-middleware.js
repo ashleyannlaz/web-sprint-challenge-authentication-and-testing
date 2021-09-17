@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken");
 const db = require("../../data/dbConfig");
 const bcrypt = require("bcryptjs");
 
-
 const checkPayload = async (req, res, next) => {
   if (!req.body.username || !req.body.password) {
     next({ status: 401, message: "username and password required" });
@@ -30,15 +29,13 @@ const checkUsername = async (req, res, next) => {
       .select("username", "password")
       .where("username", req.body.username)
       .first();
-    if (!exists) {
-      next({ status: 401, message: "invalid credentials" });
+    if (exists) {
+      if (bcrypt.compareSync(req.body.password, exists.password)) {
+        req.username = exists;
+        next();
+      }
     } else {
-        if(bcrypt.compareSync(req.body.password, exists.password)){
-            req.username = exists
-            next()
-        } else {
-            next({ status: 401, message: "invalid credentials" });
-        }
+      next({ status: 401, message: "invalid credentials" });
     }
   } catch (error) {
     next(error);
