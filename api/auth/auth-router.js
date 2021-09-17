@@ -8,6 +8,7 @@ const { checkUsername, checkPayload, usernameExists } = require("./auth-middlewa
 // BUILD TOKEN FUNCTION
 function buildToken(user) {
   const payload = {
+    id:user.id,
     username: user.username,
   };
   const options = {
@@ -22,6 +23,7 @@ async function add(user) {
   const result = await db("users").insert(user);
   const id = result[0];
   return findById(id);
+  
 }
 // FIND BY ID
 async function findById(id) {
@@ -35,8 +37,8 @@ router.post("/register", checkPayload, usernameExists, (req, res, next) => {
   const { username, password } = req.body;
   const hash = bcrypt.hashSync(password, 8);
   add({ username, password: hash })
-    .then((no) => {
-      res.status(201).json(no);
+    .then((user) => {
+      res.status(201).json(user);
     })
     .catch((error) => {
       next(error);
